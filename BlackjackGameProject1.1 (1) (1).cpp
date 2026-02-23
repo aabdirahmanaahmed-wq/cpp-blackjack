@@ -5,6 +5,7 @@
 #include <random>
 #include <algorithm>
 #include <unistd.h>
+#include <limits>
 
 using namespace std;
 // Game rules include:
@@ -45,16 +46,10 @@ int main () {
     string name;
     string decision;
 
-    // Shuffle function for deck of cards.
-
-    srand(time(NULL));
-    
-    for (i = 0; i < cardDeck.size(); i++) {
-        int x = rand() % cardDeck.size();
-        int temp = cardDeck.at(x);
-        cardDeck.at(x) = cardDeck.at(i);
-        cardDeck.at(i) = temp;
-    }
+    // Shuffle function for deck of cards using mt19937.
+    random_device rd;
+    mt19937 g(rd());
+    shuffle(cardDeck.begin(), cardDeck.end(), g);
 
 
     //Game start interface
@@ -82,9 +77,13 @@ int main () {
     cout << "You have " << currentStack << " chips." << endl;
     startStack = currentStack;
 
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     do {
-        cout << "Ready to start? Enter yes or no." << endl;
-        cin >> decision;
+        cout << "Ready to start? Enter yes or no. (Default: yes)" << endl;
+        getline(cin, decision);
+        if (decision.empty()) {
+            decision = "yes";
+        }
     } while (decision != "yes");
 
 
@@ -147,29 +146,25 @@ int main () {
 
         timesDealt += 1;
         
-        // use flag to turn on or off certain block saying dealer won 
-        while (timesDealt == 1) {
+        // Check for immediate Blackjack conditions or early busts on initialization
+        if (timesDealt == 1) {
             if (playerHandtot > 21) {
                 playerHandtot -= 10;
             }
             else if ((dealerHandtot == 21) && (playerHandtot == 21)) {
-                cout << "Push." << name << " keeps bet." << endl;
+                cout << "Push. " << name << " keeps bet." << endl;
             }
             else if ((dealerHandtot == 21) && (playerHandtot < 21)) {
-                cout << "Dealer has Blackjack. " << name << " loses " << Bet << " chips." << endl;
+                cout << "\033[31mDealer has Blackjack. " << name << " loses " << Bet << " chips.\033[0m" << endl;
                 currentStack -= Bet;
             }
             else if ((dealerHandtot < 21) && (playerHandtot == 21)) {
                 cout << "BLACKJACK!" << endl;
                 Bet = Bet * 1.5;
                 win = Bet * 2;
-                cout << name << " wins " << win << " chips!" << endl;
+                cout << "\033[32m" << name << " wins " << win << " chips!\033[0m" << endl;
                 currentStack += Bet;
             }
-            else {
-                break;
-            }
-            break;
         }
 
         cout << "Dealer has: " << dcomp1 << endl;
@@ -191,15 +186,15 @@ int main () {
                 cout << "Dealer has: " << dcomp1 << endl;
                 cout << "Player has: " << playerHandtot << endl;
                 if (playerHandtot > 21 && pcomp1 != 11) {
-                    cout << "Player has " << playerHandtot << " and busts. Player loses " << Bet << " chips." << endl;
+                    cout << "\033[31mPlayer has " << playerHandtot << " and busts. Player loses " << Bet << " chips.\033[0m" << endl;
                     
                 }
                 else if (playerHandtot > 21 && pcomp2 != 11) {
-                    cout << "Player has " << playerHandtot << " and busts. Player loses " << Bet << " chips." << endl;
+                    cout << "\033[31mPlayer has " << playerHandtot << " and busts. Player loses " << Bet << " chips.\033[0m" << endl;
                     
                 }
                 else if (playerHandtot > 21 && y != 11) {
-                    cout << "Player has " << playerHandtot << " and busts. Player loses " << Bet << " chips." << endl;
+                    cout << "\033[31mPlayer has " << playerHandtot << " and busts. Player loses " << Bet << " chips.\033[0m" << endl;
                     
                 }
                 else if (playerHandtot > 21 && pcomp1 == 11) {
@@ -318,13 +313,20 @@ int main () {
         cout << "Dealer has: " << dealerHandtot << endl;
         cout << "Player has: " << playerHandtot << endl;
 
-        if (dealerHandtot < playerHandtot) {
-            if (playerHandtot > 21) // FIX
-            cout << "The player wins the hand and " << Bet << " chips!" << endl;
+        if (playerHandtot > 21) {
+            cout << "\033[31mPlayer busts. The dealer wins the hand, and the player loses " << Bet << " chips.\033[0m" << endl;
+            currentStack -= Bet;
+        }
+        else if (dealerHandtot > 21) {
+             cout << "\033[32mDealer busts! The player wins the hand and " << Bet << " chips!\033[0m" << endl;
+             currentStack += Bet;
+        }
+        else if (dealerHandtot < playerHandtot) {
+            cout << "\033[32mThe player wins the hand and " << Bet << " chips!\033[0m" << endl;
             currentStack += Bet;
         }
         else if(playerHandtot < dealerHandtot) {
-            cout << "The dealer wind the hand, and the player loses " << Bet << " chips." << endl;
+            cout << "\033[31mThe dealer wins the hand, and the player loses " << Bet << " chips.\033[0m" << endl;
             currentStack -= Bet;
         }
         else if(dealerHandtot == playerHandtot) {
